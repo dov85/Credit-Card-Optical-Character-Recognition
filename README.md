@@ -6,7 +6,7 @@ A deep learning project for recognizing 16-digit credit card numbers from images
 
 | File | Description |
 |------|-------------|
-| `ocr_(1).ipynb` | Model code — training, evaluation, and results (Google Colab) |
+| `credit_card_ocr_model.ipynb` | Model code — training, evaluation, and results (Google Colab) |
 | `ocr_summary.pdf` | Full technical report — architecture, math, and analysis |
 | `dataset_examples/` | Sample images and labels from the synthetic dataset |
 
@@ -30,7 +30,7 @@ The model was trained on 1,200 synthetic credit card images. See [`dataset_examp
 
 ## How to Run
 
-1. Open `ocr_(1).ipynb` in **Google Colab** (GPU recommended)
+1. Open `credit_card_ocr_model.ipynb` in **Google Colab** (GPU recommended)
 2. The notebook downloads the dataset automatically from Google Drive
 3. Run all cells to train and evaluate
 
