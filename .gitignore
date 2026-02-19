@@ -1,0 +1,28 @@
+# Virtual environment
+.venv/
+
+# Full datasets (too large for GitHub)
+dataset/
+final_augmented_dataset/
+temp_extract/
+
+# Data generation scripts (not needed for repo)
+card_fix.py
+creat.py
+card.jpeg
+
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Large/temp files
+test_result_single.jpg
+*.zip
