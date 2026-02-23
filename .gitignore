@@ -1,14 +1,14 @@
 # Virtual environment
 .venv/
 
-# Full datasets (too large for GitHub)
+# Full datasets (too large for GitHub — regenerate with the pipeline scripts)
 dataset/
 final_augmented_dataset/
 temp_extract/
+perspective_dataset/
+perspective_dataset_with_cards/
 
-# Data generation scripts (not needed for repo)
-card_fix.py
-creat.py
+# Base card template (used by card_fix.py)
 card.jpeg
 
 # Byte-compiled / optimized
@@ -26,3 +26,4 @@ Thumbs.db
 # Large/temp files
 test_result_single.jpg
 *.zip
+*.pth
