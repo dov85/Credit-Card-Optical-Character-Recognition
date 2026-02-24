@@ -7,14 +7,21 @@ A deep learning project for recognizing 16-digit credit card numbers from images
 | File / Folder | Description |
 |------|-------------|
 | `credit_card_ocr_model.ipynb` | Model code — training, evaluation, and results (Google Colab) |
-| `perspective_ocr_model.ipynb` | Dual-CNN model: PerspectiveNet + OCRNet (perspective correction + OCR) |
 | `ocr_summary.pdf` | Full technical report — architecture, math, and analysis |
-| `card_fix.py` | **Step 1** — Generate 1,200 synthetic credit card images with random numbers |
-| `generate_perspective_data.py` | **Step 2** — Generate perspective-warped backgrounds with ground-truth matrices |
-| `paste_cards_to_perspective.py` | **Step 3** — Overlay synthetic cards onto perspective backgrounds |
-| `extract_card.py` | Utility — Extract card region from an image using quad coordinates |
+| `data_generation/` | All data generation scripts (see below) |
 | `dataset_examples/` | Sample images and labels from the flat card dataset |
 | `perspective_examples/` | Sample images, matrices, quads, and labels from the perspective dataset |
+
+### `data_generation/` Scripts
+
+| Script | Description |
+|--------|-------------|
+| `generate_cards.py` | **Stage 1** — Generate 1,200 synthetic credit card images with random numbers |
+| `generate_perspectives.py` | **Stage 2** — Generate perspective-warped backgrounds with ground-truth matrices |
+| `overlay_cards.py` | **Stage 3** — Overlay synthetic cards onto perspective backgrounds |
+| `augment_direct.py` | Alternative augmentation — overlay cards directly onto raw backgrounds (no perspective preprocessing) |
+| `extract_card.py` | Utility — Extract card region from an image using quad coordinates |
+| `generate_perspective_data.ipynb` | Notebook version of Stage 2 for interactive exploration |
 
 ---
 
@@ -22,7 +29,7 @@ A deep learning project for recognizing 16-digit credit card numbers from images
 
 The dataset is built in 3 stages. Each stage produces data that feeds into the next.
 
-### Stage 1: Synthetic Card Generation (`card_fix.py`)
+### Stage 1: Synthetic Card Generation (`data_generation/generate_cards.py`)
 
 Generates 1,200 flat credit card images with random 16-digit numbers, expiry dates, and cardholder names.
 
@@ -40,10 +47,10 @@ Output: dataset/images/card_XXXX.png    (1,200 card images)
 5. Saves image + label (the 16 digits separated by spaces)
 
 ```bash
-python card_fix.py
+python data_generation/generate_cards.py
 ```
 
-### Stage 2: Perspective Background Generation (`generate_perspective_data.py`)
+### Stage 2: Perspective Background Generation (`data_generation/generate_perspectives.py`)
 
 Creates perspective-warped background scenes with ground-truth transformation matrices. Uses real card-holding photos from `temp_extract/` as source backgrounds.
 
@@ -64,10 +71,10 @@ Output: perspective_dataset/images/sample_XXXX.jpg      (warped backgrounds)
 6. Saves the warped image, the 3×3 matrix (`.npy`), and the transformed quad (`.json`)
 
 ```bash
-python generate_perspective_data.py
+python data_generation/generate_perspectives.py
 ```
 
-### Stage 3: Card Overlay (`paste_cards_to_perspective.py`)
+### Stage 3: Card Overlay (`data_generation/overlay_cards.py`)
 
 Combines Stage 1 and Stage 2: overlays each synthetic card onto a random perspective background at the exact quad position.
 
@@ -91,21 +98,21 @@ Output: perspective_dataset_with_cards/images/sample_XXXX.jpg   (final composite
 6. Copies the card number label
 
 ```bash
-python paste_cards_to_perspective.py
+python data_generation/overlay_cards.py
 ```
 
 ### Pipeline Diagram
 
 ```
-┌─────────────────┐     ┌──────────────────────┐     ┌─────────────────────────┐
-│  card_fix.py     │     │ generate_perspective  │     │ paste_cards_to          │
-│                  │     │ _data.py              │     │ _perspective.py         │
-│  card.jpeg ──►   │     │                      │     │                         │
-│  1,200 flat cards│────►│ temp_extract/ ──►     │────►│  Card + Background ──►  │
-│  + labels        │     │ warped backgrounds    │     │  Final composites       │
-│                  │     │ + matrices + quads    │     │  + matrices + labels    │
-└─────────────────┘     └──────────────────────┘     └─────────────────────────┘
-     Stage 1                  Stage 2                       Stage 3
+┌──────────────────────┐     ┌──────────────────────┐     ┌─────────────────────────┐
+│  generate_cards.py    │     │ generate_perspectives │     │ overlay_cards.py         │
+│                      │     │ .py                   │     │                         │
+│  card.jpeg ──►       │     │                      │     │                         │
+│  1,200 flat cards    │────►│ temp_extract/ ──►     │────►│  Card + Background ──►  │
+│  + labels            │     │ warped backgrounds    │     │  Final composites       │
+│                      │     │ + matrices + quads    │     │  + matrices + labels    │
+└──────────────────────┘     └──────────────────────┘     └─────────────────────────┘
+       Stage 1                      Stage 2                       Stage 3
 ```
 
 ---
@@ -143,23 +150,13 @@ Element ranges across the full dataset:
 
 ---
 
-## Models
+## Model
 
-### 1. Flat Card OCR (`credit_card_ocr_model.ipynb`)
+### Flat Card OCR (`credit_card_ocr_model.ipynb`)
 
 - **Task**: Predict 16 digits from a flat (non-perspective) card image
 - **Architecture**: Sequential CNN (MOCNN) — conv backbone reduces to 1×16 spatial sequence → shared MLP classifier
 - **Result**: **100% sequence-level accuracy** on validation data
-
-### 2. Perspective OCR (`perspective_ocr_model.ipynb`)
-
-- **Task**: Predict 16 digits from a perspective-warped card image
-- **Architecture**: Dual-CNN pipeline:
-  1. **PerspectiveNet** — predicts the 3×3 perspective matrix from the warped image
-  2. **DifferentiableSpatialTransformer** — applies the predicted matrix to straighten the card (fully differentiable via `grid_sample`)
-  3. **OCRNet** — reads 16 digits from the straightened card
-- **Loss**: `α × MSE(predicted_matrix, GT_matrix) + β × CrossEntropy(predicted_digits, GT_digits)`
-- **Key technique**: Per-element matrix normalization (zero-mean, unit-variance for each of the 9 matrix elements) to balance the MSE loss across rotation, translation, and projective terms
 
 For full details on the architecture, loss formulation, and evaluation methodology, see [`ocr_summary.pdf`](ocr_summary.pdf).
 
@@ -188,16 +185,11 @@ For full details on the architecture, loss formulation, and evaluation methodolo
 2. The notebook downloads the dataset automatically from Google Drive
 3. Run all cells to train and evaluate
 
-### Option B: Perspective OCR
-1. Run the 3-stage pipeline locally to generate the dataset (or download from Drive)
-2. Upload `perspective_dataset_with_cards/` to Colab
-3. Open `perspective_ocr_model.ipynb` and run all cells
-
-### Option C: Regenerate Data Locally
+### Option B: Regenerate Data Locally
 ```bash
-python card_fix.py                      # Stage 1: 1,200 flat cards
-python generate_perspective_data.py     # Stage 2: perspective backgrounds
-python paste_cards_to_perspective.py    # Stage 3: overlay cards
+python data_generation/generate_cards.py          # Stage 1: 1,200 flat cards
+python data_generation/generate_perspectives.py   # Stage 2: perspective backgrounds
+python data_generation/overlay_cards.py            # Stage 3: overlay cards
 ```
 
 ## Technologies
