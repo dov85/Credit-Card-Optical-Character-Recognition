@@ -27,3 +27,5 @@ Thumbs.db
 test_result_single.jpg
 *.zip
 *.pth
+perspective_dataset_256/
+perspective_dataset_768/
