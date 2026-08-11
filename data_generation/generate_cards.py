@@ -5,6 +5,30 @@ import os
 import random
 import string
 
+# Candidate paths for a plain sans-serif TrueType font, in Windows / macOS / Linux order.
+# A real TrueType font is required: PIL's built-in default is a small bitmap font, and
+# falling back to it silently would produce a dataset that looks nothing like the one the
+# models were trained on.
+FONT_CANDIDATES = [
+    r"C:\Windows\Fonts\arial.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "/Library/Fonts/Arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+]
+
+
+def find_font():
+    """Return the first available TrueType font path, or raise with a clear message."""
+    for path in FONT_CANDIDATES:
+        if os.path.exists(path):
+            return path
+    raise FileNotFoundError(
+        "No TrueType font found. Install DejaVu/Liberation fonts, or add your font "
+        f"path to FONT_CANDIDATES in {os.path.basename(__file__)}."
+    )
+
+
 def generate_random_data():
     # Generate 4 groups of 4 digits
     card_num_groups = [str(random.randint(1000, 9999)) for _ in range(4)]
@@ -42,9 +66,8 @@ def create_synthetic_dataset(base_image_path, num_samples=1200):
     os.makedirs(lbl_dir, exist_ok=True)
 
     # Configuration
-    font_name = "arial.ttf"
-    font_path = f"C:\\Windows\\Fonts\\{font_name}"
-    
+    font_path = find_font()
+
     size_main = 19
     size_date = 12
     size_small_id = 12
@@ -53,14 +76,10 @@ def create_synthetic_dataset(base_image_path, num_samples=1200):
     bg_color = (0, 0, 0)
     text_color = (200, 200, 200)
 
-    try:
-        f_main = ImageFont.truetype(font_path, size_main)
-        f_date = ImageFont.truetype(font_path, size_date)
-        f_id = ImageFont.truetype(font_path, size_small_id)
-        f_name = ImageFont.truetype(font_path, size_name)
-    except OSError:
-        print("Font not found, using default.")
-        f_main = f_date = f_id = f_name = ImageFont.load_default()
+    f_main = ImageFont.truetype(font_path, size_main)
+    f_date = ImageFont.truetype(font_path, size_date)
+    f_id = ImageFont.truetype(font_path, size_small_id)
+    f_name = ImageFont.truetype(font_path, size_name)
 
     # Load base image once
     original_pil = Image.open(base_image_path).convert("RGBA")
