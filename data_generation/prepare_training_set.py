@@ -23,8 +23,18 @@ import sys
 from PIL import Image
 
 SRC = "perspective_dataset_with_cards"
-DST = "perspective_dataset_256"
-SIZE = (256, 256)   # must match IMG_SIZE in perspective_ocr_model.ipynb
+DST = "perspective_dataset_768"
+
+# Must match IMG_SIZE in perspective_ocr_model.ipynb.
+#
+# 256 was the first choice and it is enough to locate the card — corner error reached 1.7 px
+# with it. It is not enough to *read* the card: at 256 the card is about 149 px wide, so a
+# single digit is 5.6 px, and per-digit accuracy stalled at 85%. Resolution the resize threw
+# away cannot be recovered by any later upsampling.
+#
+# At 768 a digit is about 17 px. The corner network still sees a 256 downscale, so only the
+# sampling of the crop gets the extra detail.
+SIZE = (768, 768)
 
 
 def main(src=SRC, dst=DST, size=SIZE):
